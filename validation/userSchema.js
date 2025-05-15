@@ -118,10 +118,6 @@ exports.loginUserSchema = checkSchema({
             errorMessage: "Password must be A String",
         },
 
-        isLength: {
-            options: {min: 4},
-            errorMessage: 'password charachter length must be greater 4',
-        },
 
         trim: true,
         escape: true
