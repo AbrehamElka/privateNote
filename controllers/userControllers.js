@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const { validationResult } = require("express-validator");
 const secret = process.env.JWT_SECRET;
 
+// register
 exports.createNewUser = async(req, res) => {
 
     const errors = validationResult(req);
@@ -37,7 +38,7 @@ exports.createNewUser = async(req, res) => {
 };
 
 
-
+// login
 exports.loginUser = async(req, res) => {
 
     const { email, userPassword } = req.body;
@@ -50,7 +51,6 @@ exports.loginUser = async(req, res) => {
             return res.status(400).json({ message: "Invalid Credentials" });
         }
 
-        console.log("User", userExists.rows[0]);
         const verifiedUser = await bcrypt.compare(userPassword, userExists.rows[0].userpassword);
         if(!verifiedUser) {
             return res.status(400).json({ message: 'Invalid Credentials' });

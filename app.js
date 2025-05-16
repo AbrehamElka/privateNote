@@ -1,6 +1,7 @@
 const express = require("express"); 
 const PORT = process.env.PORT || 8000;
 const userRouter = require("./routers/userRouter");
+const noteRouter = require("./routers/noteRouter");
 const app = express();
 
 
@@ -15,6 +16,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api', userRouter);
+app.use('/api', noteRouter);
 
 app.listen(PORT, () => {
     console.log(`Server Running on http://localhost:${PORT}/`);
