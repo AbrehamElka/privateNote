@@ -44,6 +44,7 @@ This is a simple private note application built with Node.js, Express, and Postg
     PGDATABASE=privateNote
     PGCONNECT_TIMEOUT=2000
     JWT_SECRET=simplePrivateNoteApp
+    JWT_REFERESH_SECRET=simpleReferesh
     ```
 
     Make sure to replace `your_db_password` with your actual PostgreSQL password.

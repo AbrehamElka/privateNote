@@ -2,13 +2,14 @@ const express = require("express");
 const PORT = process.env.PORT || 8000;
 const userRouter = require("./routers/userRouter");
 const noteRouter = require("./routers/noteRouter");
+const cookieParser = require("cookie-parser");
 const app = express();
 
 
 
 
-app.use(express.json())
-
+app.use(express.json());
+app.use(cookieParser());
 
 
 app.get('/', (req, res) => {

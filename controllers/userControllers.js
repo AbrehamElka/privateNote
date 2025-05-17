@@ -2,14 +2,22 @@ const pool = require("../db/pool");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { validationResult } = require("express-validator");
-const secret = process.env.JWT_SECRET;
 
+
+
+const generateRefreshToken = (payload) => {
+    return jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' })
+}
+
+const generateAccessToken = (payload) => {
+    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1m' })
+}
 // register
 exports.createNewUser = async(req, res) => {
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return res.status(200).json({ errors: errors.array() });
+        return res.status(422).json({ errors: errors.array() });
     }
 
     const { firstname, lastname, email, userPassword } = req.body;
@@ -24,7 +32,7 @@ exports.createNewUser = async(req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(userPassword, salt);
 
-        const newUser = await pool.query(`INSERT INTO users (firstname, lastname, email, userPassword)
+        const newUser = await pool.query(`INSERT INTO users (firstname, lastname, email, userpassword)
             VALUES ($1::varchar(20), $2::varchar(20), $3::varchar(20), $4::text)
             RETURNING id, firstname, lastname, email`, 
             [firstname, lastname, email, hashedPassword]);
@@ -41,8 +49,13 @@ exports.createNewUser = async(req, res) => {
 // login
 exports.loginUser = async(req, res) => {
 
-    const { email, userPassword } = req.body;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(422).json({ errors: errors.array() });
+    }
 
+    const { email, userPassword } = req.body;
+    
     try {
         
         const userExists = await pool.query('SELECT * FROM users WHERE email = $1::text', [email]);
@@ -66,12 +79,41 @@ exports.loginUser = async(req, res) => {
             email: userExists.rows[0].email
         }
 
-        const token = jwt.sign(payload, secret, { expiresIn: '1h' });
+        const token = generateAccessToken(payload);
+        const refreshToken = generateRefreshToken(payload);
+
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'Strict',
+            maxAge: 7 * 12 * 60 * 60 * 1000
+        });
 
         res.json({ token });
 
     } catch(err) {
         console.error(err.message);
         res.status(500).json({ message: "server error" });
+    }
+}
+
+exports.refereshToken = async(req, res) => {
+    const token = req.cookies.refreshToken;
+    if (!token) {
+        return res.status(401).json({ error: "server error"});
+    }
+
+    try {
+        jwt.verify(token, process.env.JWT_REFERESH_SECRET, (err, user) => {
+            if (err) return res.status(403).json({ error: "server error" });
+
+            req.user = user;
+            const accessToken = generateAccessToken(req.user);
+
+            return res.json({ accessToken });
+        });
+    } catch(err) {
+        console.error(err.message);
+        res.status(500).json({ error: "server error" });
     }
 }
